@@ -3,13 +3,14 @@ package blockchain
 import (
 	"bytes"
 	"crypto/sha256"
-	"fmt"
 	"math"
 	"math/big"
 
 	"github.com/MellKam/blockchain-golang/pkg/converter"
 )
 
+// Ratio 4 to 1
+// 00xxxx... = 8 Difficulty
 const Difficulty uint = 8
 
 type ProofOfWork struct {
@@ -29,27 +30,24 @@ func (pow ProofOfWork) createBlockData(nonce uint) []byte {
 		[][]byte{
 			pow.Block.PreviousHash[:],
 			pow.Block.Data,
-			converter.UintToByteSlice(nonce),
-			converter.UintToByteSlice(Difficulty),
+			converter.NumberToByteSlice(nonce),
+			converter.NumberToByteSlice(Difficulty),
 		},
 		[]byte{},
 	)
 }
 
 func (pow ProofOfWork) MineBlock() (uint, HashType) {
-	var intHash big.Int
-	var hash HashType
-	var nonce uint = 0
+	var (
+		intHash *big.Int = big.NewInt(0)
+		hash    HashType = [32]byte{}
+		nonce   uint     = 0
+	)
 
 	for nonce < math.MaxInt64 {
-		data := pow.createBlockData(nonce)
-		hash = sha256.Sum256(data)
+		isBlockValid := pow.validateBlock(nonce, &hash, intHash)
 
-		fmt.Println(hash)
-
-		intHash.SetBytes(hash[:])
-
-		if intHash.Cmp(pow.Target) == -1 {
+		if isBlockValid {
 			break
 		} else {
 			nonce++
@@ -59,13 +57,17 @@ func (pow ProofOfWork) MineBlock() (uint, HashType) {
 	return nonce, hash
 }
 
-func (pow *ProofOfWork) ValidateBlock() bool {
-	var intHash big.Int
+func (pow *ProofOfWork) validateBlock(
+	nonce uint,
+	hash *HashType,
+	intHash *big.Int,
+) bool {
+	data := pow.createBlockData(nonce)
 
-	data := pow.createBlockData(pow.Block.Nonce)
-
-	hash := sha256.Sum256(data)
+	*hash = sha256.Sum256(data)
 	intHash.SetBytes(hash[:])
 
+	// if our intHash less then target
+	// then we fount right hash
 	return intHash.Cmp(pow.Target) == -1
 }

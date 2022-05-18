@@ -13,13 +13,20 @@ func main() {
 	b.AddBlock("Second block after genesis")
 	b.AddBlock("Third block after genesis")
 
-	for i, block := range b.Blocks {
-		fmt.Printf(`
-			--- Block #%d
-			PreviousHash: %x
-			Hash: %x
-			Data: %s
-			Nonce: %d
-		`, i, block.PreviousHash, block.Hash, block.Data, block.Nonce)
+	var block *blockchain.Block
+
+	iterator := b.NewBlockchainIterator()
+	for {
+		block = iterator.Next()
+
+		fmt.Printf("Data: %s\n", block.Data)
+		fmt.Printf("Hash: %x\n", block.Hash)
+		fmt.Printf("PreviousHash: %x\n", block.PreviousHash)
+
+		fmt.Println()
+
+		if block.PreviousHash == [32]byte{} {
+			break
+		}
 	}
 }
