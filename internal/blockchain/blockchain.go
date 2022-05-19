@@ -14,6 +14,7 @@ type Blockchain struct {
 
 func NewBlockchain() *Blockchain {
 	options := badger.DefaultOptions(DB_DATA_PATH)
+	options.Logger = nil
 
 	// create badger database
 	db, err := badger.Open(options)
@@ -39,7 +40,7 @@ func initDatabase(db *badger.DB) (HashType, error) {
 		// if not found blockchain in database,
 		// then create new and set it to db
 		if err == badger.ErrKeyNotFound {
-			fmt.Println("Not found existing blockchain")
+			fmt.Printf("Not found existing blockchain\n\n")
 
 			genesis := createGenesisBlock()
 			err := SetBlockToDb(txn, genesis)
@@ -50,7 +51,7 @@ func initDatabase(db *badger.DB) (HashType, error) {
 
 		handler.HandlePossibleError(err)
 
-		fmt.Println("Found existing blockchain")
+		fmt.Printf("Found existing blockchain\n\n")
 
 		// if successfully found lastHash, then blockchain
 		// already initialized in database and we wand
@@ -66,7 +67,7 @@ func initDatabase(db *badger.DB) (HashType, error) {
 	return lastHash, err
 }
 
-func (b *Blockchain) AddBlock(data string) {
+func (b *Blockchain) AddBlock(data string) (*Block, error) {
 	block := NewBlock(b.LastHash, data)
 	mineBlockWithPOW(block)
 
@@ -76,6 +77,8 @@ func (b *Blockchain) AddBlock(data string) {
 	handler.HandlePossibleError(err)
 
 	b.LastHash = block.Hash
+
+	return block, err
 }
 
 func mineBlockWithPOW(block *Block) {
