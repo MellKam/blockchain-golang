@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	excepion "github.com/MellKam/blockchain-golang/pkg/exception"
+	"github.com/MellKam/blockchain-golang/pkg/handler"
 	"github.com/dgraph-io/badger/v3"
 )
 
@@ -19,7 +19,7 @@ func (iter *BlockchainIterator) Next() *Block {
 
 		return err
 	})
-	excepion.HandleError(err)
+	handler.HandlePossibleError(err)
 
 	iter.currentHash = block.PreviousHash
 

@@ -1,8 +1,8 @@
-package excepion
+package handler
 
 import "log"
 
-func HandleError(err error) {
+func HandlePossibleError(err error) {
 	if err != nil {
 		log.Panic(err)
 	}

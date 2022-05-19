@@ -3,8 +3,8 @@ package blockchain
 import (
 	"fmt"
 
-	excepion "github.com/MellKam/blockchain-golang/pkg/exception"
-	badger "github.com/dgraph-io/badger/v3"
+	"github.com/MellKam/blockchain-golang/pkg/handler"
+	"github.com/dgraph-io/badger/v3"
 )
 
 type Blockchain struct {
@@ -17,12 +17,17 @@ func NewBlockchain() *Blockchain {
 
 	// create badger database
 	db, err := badger.Open(options)
-	excepion.HandleError(err)
+	handler.HandlePossibleError(err)
 
 	lastHash, err := initDatabase(db)
-	excepion.HandleError(err)
+	handler.HandlePossibleError(err)
 
 	return &Blockchain{lastHash, db}
+}
+
+// Create struct that are responsible for iteration throught chain blocks
+func (b *Blockchain) NewBlockchainIterator() *BlockchainIterator {
+	return &BlockchainIterator{b.LastHash, b.Database}
 }
 
 func initDatabase(db *badger.DB) (HashType, error) {
@@ -43,7 +48,7 @@ func initDatabase(db *badger.DB) (HashType, error) {
 			return err
 		}
 
-		excepion.HandleError(err)
+		handler.HandlePossibleError(err)
 
 		fmt.Println("Found existing blockchain")
 
@@ -51,7 +56,7 @@ func initDatabase(db *badger.DB) (HashType, error) {
 		// already initialized in database and we wand
 		// to get lastHash:[32]byte from this item
 		data, err := item.ValueCopy(nil)
-		excepion.HandleError(err)
+		handler.HandlePossibleError(err)
 
 		copy(lastHash[:], data[:32])
 
@@ -68,7 +73,7 @@ func (b *Blockchain) AddBlock(data string) {
 	err := b.Database.Update(func(txn *badger.Txn) error {
 		return SetBlockToDb(txn, block)
 	})
-	excepion.HandleError(err)
+	handler.HandlePossibleError(err)
 
 	b.LastHash = block.Hash
 }
@@ -86,8 +91,4 @@ func createGenesisBlock() *Block {
 	mineBlockWithPOW(genesis)
 
 	return genesis
-}
-
-func (b *Blockchain) NewBlockchainIterator() *BlockchainIterator {
-	return &BlockchainIterator{b.LastHash, b.Database}
 }

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	"github.com/MellKam/blockchain-golang/pkg/exception"
+	"github.com/MellKam/blockchain-golang/pkg/handler"
 )
 
 const HashBitsNumber uint = 256
@@ -27,7 +27,7 @@ func (b *Block) SerializeToBytes() []byte {
 	encoder := gob.NewEncoder(&buffer)
 
 	err := encoder.Encode(b)
-	excepion.HandleError(err)
+	handler.HandlePossibleError(err)
 
 	return buffer.Bytes()
 }
@@ -37,7 +37,7 @@ func DeserializeBytesToBlock(data []byte) *Block {
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 
 	err := decoder.Decode(&block)
-	excepion.HandleError(err)
+	handler.HandlePossibleError(err)
 
 	return &block
 }

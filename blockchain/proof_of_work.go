@@ -20,6 +20,8 @@ type ProofOfWork struct {
 
 func NewProofOfWork(block *Block) *ProofOfWork {
 	target := big.NewInt(1)
+
+	// 1 to the power of (256 - Difficulty)
 	target.Lsh(target, HashBitsNumber-Difficulty)
 
 	return &ProofOfWork{block, target}
@@ -30,8 +32,8 @@ func (pow ProofOfWork) createBlockData(nonce uint) []byte {
 		[][]byte{
 			pow.Block.PreviousHash[:],
 			pow.Block.Data,
-			converter.NumberToByteSlice(nonce),
-			converter.NumberToByteSlice(Difficulty),
+			converter.IntegerToByteSlice(nonce),
+			converter.IntegerToByteSlice(Difficulty),
 		},
 		[]byte{},
 	)
@@ -42,32 +44,36 @@ func (pow ProofOfWork) MineBlock() (uint, HashType) {
 		intHash *big.Int = big.NewInt(0)
 		hash    HashType = [32]byte{}
 		nonce   uint     = 0
+		data    []byte
 	)
 
 	for nonce < math.MaxInt64 {
-		isBlockValid := pow.validateBlock(nonce, &hash, intHash)
+		data = pow.createBlockData(nonce)
+		hash = sha256.Sum256(data)
 
-		if isBlockValid {
+		intHash.SetBytes(hash[:])
+
+		// if intHash < target so we found
+		// right hash and we can exit from cycle
+		if intHash.Cmp(pow.Target) == -1 {
 			break
-		} else {
-			nonce++
 		}
+
+		// otherwise increment nonce and rerun cycle
+		// until we found correct hash
+		nonce++
 	}
 
 	return nonce, hash
 }
 
-func (pow *ProofOfWork) validateBlock(
-	nonce uint,
-	hash *HashType,
-	intHash *big.Int,
-) bool {
-	data := pow.createBlockData(nonce)
+func (pow *ProofOfWork) ValidateBlockHash() bool {
+	data := pow.createBlockData(pow.Block.Nonce)
+	hash := sha256.Sum256(data)
 
-	*hash = sha256.Sum256(data)
-	intHash.SetBytes(hash[:])
+	if hash == pow.Block.Hash {
+		return true
+	}
 
-	// if our intHash less then target
-	// then we fount right hash
-	return intHash.Cmp(pow.Target) == -1
+	return false
 }
